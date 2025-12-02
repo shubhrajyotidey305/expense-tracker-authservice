@@ -1,6 +1,7 @@
 package com.example.authservice.model;
 
 import com.example.authservice.entities.UserInfo;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.*;
@@ -11,7 +12,7 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserInfoDto extends UserInfo
 {
     @NonNull

@@ -4,7 +4,9 @@ import com.example.authservice.entities.UserInfo;
 import com.example.authservice.repository.RefreshTokenRepository;
 import com.example.authservice.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -20,11 +22,15 @@ public class RefreshTokenService {
 
     public RefreshToken createRefreshToken(String username){
         UserInfo userInfoExtracted = userRepository.findByUsername(username);
-        RefreshToken refreshToken = RefreshToken.builder()
-                .userInfo(userInfoExtracted)
-                .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusMillis(1000 * 60 * 60 * 24 * 2)) // 1000ms * 60s * 60m * 24h * 2 days
-                .build();
+        if (userInfoExtracted == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found for refresh token");
+        }
+        RefreshToken refreshToken = refreshTokenRepository.findByUserInfo(userInfoExtracted)
+                .orElse(RefreshToken.builder().userInfo(userInfoExtracted).build());
+
+        refreshToken.setToken(UUID.randomUUID().toString());
+        refreshToken.setExpiryDate(Instant.now().plusMillis(1000 * 60 * 60 * 24 * 2)); // 2 days
+
         return refreshTokenRepository.save(refreshToken);
     }
 
@@ -35,7 +41,7 @@ public class RefreshTokenService {
     public RefreshToken verifyExpiration(RefreshToken token){
         if(token.getExpiryDate().compareTo(Instant.now())<0){
             refreshTokenRepository.delete(token);
-            throw new RuntimeException(token.getToken() + " Refresh token is expired. Please make a new login..!");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token is expired. Please make a new login.");
         }
         return token;
     }

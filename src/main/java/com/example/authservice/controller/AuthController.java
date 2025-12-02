@@ -2,7 +2,7 @@ package com.example.authservice.controller;
 
 import com.example.authservice.entities.RefreshToken;
 import com.example.authservice.model.UserInfoDto;
-import com.example.authservice.response.JwtResponseDto;
+import com.example.authservice.response.JwtResponseDTO;
 import com.example.authservice.service.JwtService;
 import com.example.authservice.service.RefreshTokenService;
 import com.example.authservice.service.UserDetailsServiceImpl;
@@ -21,7 +21,8 @@ import java.util.Objects;
 
 @AllArgsConstructor
 @RestController
-public class AuthController {
+public class AuthController
+{
 
     @Autowired
     private JwtService jwtService;
@@ -33,17 +34,17 @@ public class AuthController {
     private UserDetailsServiceImpl userDetailsService;
 
     @PostMapping("auth/v1/signup")
-    public ResponseEntity SignUp(@RequestBody UserInfoDto userInfoDto) {
-        try {
-            Boolean isSignUped = userDetailsService.signupUser(userInfoDto);
-            if (Boolean.FALSE.equals(isSignUped)) {
+    public ResponseEntity SignUp(@RequestBody UserInfoDto userInfoDto){
+        try{
+            String userId = userDetailsService.signupUser(userInfoDto);
+            if(Objects.isNull(userId)){
                 return new ResponseEntity<>("Already Exist", HttpStatus.BAD_REQUEST);
             }
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(userInfoDto.getUsername());
             String jwtToken = jwtService.GenerateToken(userInfoDto.getUsername());
-            return new ResponseEntity<>(JwtResponseDto.builder().accessToken(jwtToken).
-                    token(refreshToken.getToken()).build(), HttpStatus.OK);
-        } catch (Exception ex) {
+            return new ResponseEntity<>(JwtResponseDTO.builder().accessToken(jwtToken).
+                    token(refreshToken.getToken()).userId(userId).build(), HttpStatus.OK);
+        }catch (Exception ex){
             return new ResponseEntity<>("Exception in User Service", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
